@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
 import "solady/src/utils/SafeTransferLib.sol";
 
 interface IFlashLoanEtherReceiver {
@@ -13,7 +14,7 @@ interface IFlashLoanEtherReceiver {
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
  */
 contract SideEntranceLenderPool {
-    mapping(address => uint256) private balances;
+    mapping(address => uint256) public balances;
 
     error RepayFailed();
 
@@ -29,9 +30,11 @@ contract SideEntranceLenderPool {
 
     function withdraw() external {
         uint256 amount = balances[msg.sender];
-        
+
         delete balances[msg.sender];
         emit Withdraw(msg.sender, amount);
+        console.log("amount", amount);
+        console.log("balance", address(this).balance);
 
         SafeTransferLib.safeTransferETH(msg.sender, amount);
     }
@@ -41,7 +44,6 @@ contract SideEntranceLenderPool {
 
         IFlashLoanEtherReceiver(msg.sender).execute{value: amount}();
 
-        if (address(this).balance < balanceBefore)
-            revert RepayFailed();
+        if (address(this).balance < balanceBefore) revert RepayFailed();
     }
 }

